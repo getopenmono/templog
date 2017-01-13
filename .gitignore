@@ -1,0 +1,7 @@
+sim
+.DS_Strore
+build
+*.map
+*.elf
+templog
+gdb_script

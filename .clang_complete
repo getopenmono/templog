@@ -1,0 +1,11 @@
+-I/usr/local/openmono/mono/include
+-I/usr/local/openmono/mono/include/display
+-I/usr/local/openmono/mono/include/display/ui
+-I/usr/local/openmono/mono/include/display/ili9225g
+-I/usr/local/openmono/mono/include/io
+-I/usr/local/openmono/mono/include/media
+-I/usr/local/openmono/mono/include/mbed/api
+-I/usr/local/openmono/mono/include/mbed/hal
+-I/usr/local/openmono/mono/include/mbed/libraries/fs/sd
+-I/usr/local/openmono/mono/include/mbed/target_cypress
+
