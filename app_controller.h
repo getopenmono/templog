@@ -3,6 +3,7 @@
 
 #include <mono.h>
 #include "graph_view.h"
+#include "settings_scene.h"
 
 //using namespace mono::ui;
 using namespace mono;
@@ -10,10 +11,10 @@ using namespace mono;
 class AppController : public mono::IApplication {
 public:
 
-    Timer tempTimer, clkTimer;
+    Timer clkTimer;
     mono::ui::TextLabelView tempLbl;
     GraphView graph;
-    static const int filterLength = 10;
+    static const int filterLength = 3;
     int tempFilter[filterLength];
     unsigned int filterPosition;
     PowerSaver pwrsave;
@@ -22,10 +23,17 @@ public:
     mono::ui::TextLabelView timeLbl;
     ScheduledTask tmpTask;
     
+    mono::ui::ButtonView settingsBtn;
+    
+    SettingsScene settingScn;
+    
     AppController();
 
-    void getTemp(bool firstRun = false);
+    float getTemp(bool firstRun = false);
     void getTempTask();
+    
+    void showSettings();
+    void showApp();
     
     void updateClock();
 

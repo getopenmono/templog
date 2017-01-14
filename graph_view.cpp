@@ -1,6 +1,5 @@
 #include "graph_view.h"
 #include <text_render.h>
-#include <ptmono15.h>
 
 using mono::geo::Rect;
 using mono::String;
@@ -20,27 +19,59 @@ GraphView::GraphView (uint8_t y_, uint8_t height_)
 {
 	static float d[176];
 	data = d;
+    secsBetweenSamples = 1;
+    secsDirty = true;
+}
+
+void GraphView::setSecsBetweenPoints(int secs)
+{
+    secsDirty = secsBetweenSamples != secs;
+    secsBetweenSamples = secs;
 }
 
 void GraphView::repaint ()
 {
 	maxData = 33.0;
 	minData = 3.0;
-
-    mono::display::TextRender txtRndr(painter);
+    
+    painter.setTextSize(1);
+    
     String text = String::Format("%d",(int)maxData);
-
     Rect upr(viewRect.X(), viewRect.Y() + 1, viewRect.Width(), viewRect.Height());
-    txtRndr.drawInRect(upr, text, mono::display::PT_Mono_15);
+    int cursor = upr.X();
+    for (unsigned int x=0; x<text.Length(); x++) {
+        painter.drawChar(cursor, upr.Y(), text[x]);
+        cursor += 5;
+    }
+    
     text = String::Format("%d",(int)minData);
-    mono::geo::Size dim = txtRndr.renderDimension(text, mono::display::PT_Mono_15);
-    Rect lwr(viewRect.X(), viewRect.Y2() - dim.Height(), dim.Width(), dim.Height());
-    txtRndr.drawInRect(lwr, text, mono::display::PT_Mono_15);
+    mono::geo::Point lwr(viewRect.X()+5, viewRect.Y2() - 7 - 8);
+    cursor = lwr.X();
+    for (unsigned int x=0; x<text.Length(); x++) {
+        painter.drawChar(cursor, lwr.Y(), text[x]);
+        cursor += 5;
+    }
 
+    cursor = 1+viewRect.X();
+    mono::String time = mono::DateTime::now().addSeconds(-secsBetweenSamples*175).toTimeString();
+    for (unsigned int i=0; i<time.Length(); i++) {
+        painter.drawChar(cursor, viewRect.Y2()-7, time[i]);
+        cursor += 5;
+    }
+    
+    time = mono::DateTime::now().toTimeString();
+    cursor = viewRect.X2() - time.Length()*5;
+    for (unsigned int i=0; i<time.Length(); i++) {
+        painter.drawChar(cursor, viewRect.Y2()-7, time[i]);
+        cursor += 5;
+    }
+    
 	deletePoints();
 	drawPoints();
 	painter.setForegroundColor(mono::display::MidnightBlueColor);
-	painter.drawRect(viewRect);
+    
+    Rect border(viewRect.X()+11, viewRect.Y(), viewRect.Width() - 11, viewRect.Height() - 8);
+	painter.drawRect(border);
 }
 
 void GraphView::deletePoints ()

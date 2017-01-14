@@ -2,13 +2,14 @@
 #include <ptmono30.h>
 
 AppController::AppController() :
-    tempTimer(1000),
-    clkTimer(500),
+    clkTimer(999),
     tempLbl(mono::geo::Rect(0,40,176,110),""),
     graph(109,109),
-    timeLbl(mono::geo::Rect(0,89,176,15), "time")
+    timeLbl(mono::geo::Rect(0,89,176,15), "time"),
+    settingsBtn(mono::geo::Rect(150,5,176-151,30), "i")
 {
-    secInterval = 1;
+    secInterval = 164;
+    
     tempLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
     tempLbl.setFont(PT_Mono_30);
     tempLbl.setText(mono::display::CloudsColor);
@@ -17,14 +18,22 @@ AppController::AppController() :
     timeLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
     timeLbl.show();
     
-    getTemp(true);
-    graph.show();
-
-    //tempTimer.setCallback<AppController>(this, &AppController::getTemp);
     clkTimer.setCallback<AppController>(this, &AppController::updateClock);
+    
+#ifdef MONO_COMPILE_TIMESTAMP
+    DateTime::setSystemDateTime(DateTime::fromISO8601(MONO_COMPILE_TIMESTAMP));
+#endif
+    
+    float temp = getTemp(true);
+    graph.setSecsBetweenPoints(secInterval);
+    graph.setNextPoint(temp);
+    graph.show();
+    
+    settingsBtn.setClickCallback<AppController>(this, &AppController::showSettings);
+    settingsBtn.show();
 }
 
-void AppController::getTemp(bool firstRun)
+float AppController::getTemp(bool firstRun)
 {
     int rawTemp = IApplicationContext::Instance->Temperature->ReadMilliCelcius();
 
@@ -46,8 +55,8 @@ void AppController::getTemp(bool firstRun)
 
     int temp = (int) tempC;
     tempLbl.setText(String::Format("%d.%d C", temp, (int)((tempC-temp)*10) ));
-    graph.setNextPoint(tempC);
-    graph.scheduleRepaint();
+    
+    return tempC;
 }
 
 void AppController::getTempTask()
@@ -61,7 +70,9 @@ void AppController::getTempTask()
         wait_ms(16);
     }
     
-    getTemp();
+    float temp = getTemp();
+    graph.setNextPoint(temp);
+    graph.scheduleRepaint();
     
     if (fenced)
         power->setPowerFence(true);
@@ -73,6 +84,7 @@ void AppController::getTempTask()
 void AppController::updateClock()
 {
     timeLbl.setText(mono::DateTime::now().toTimeString());
+    getTemp();
 }
 
 void AppController::fillTempFilter(int temp)
@@ -82,6 +94,26 @@ void AppController::fillTempFilter(int temp)
         tempFilter[i] = temp;
     }
     filterPosition = 0;
+}
+
+void AppController::showSettings()
+{
+    tempLbl.hide();
+    timeLbl.hide();
+    graph.hide();
+    settingsBtn.hide();
+    
+    settingScn.show();
+}
+
+void AppController::showApp()
+{
+    settingScn.hide();
+    
+    tempLbl.show();
+    timeLbl.show();
+    graph.show();
+    settingsBtn.show();
 }
 
 void AppController::monoWakeFromReset()
@@ -97,7 +129,7 @@ void AppController::monoWillGotoSleep()
 {
     pwrsave.deactivate();
     IApplicationContext::Instance->DisplayController->setBrightness(0);
-    secInterval = 10;
+    //secInterval = 10;
 }
 
 void AppController::monoWakeFromSleep()
@@ -105,10 +137,15 @@ void AppController::monoWakeFromSleep()
     IApplicationContext::Instance->DisplayController->setBrightness(0);
     pwrsave.undim();
     
+    showApp();
     tempLbl.scheduleRepaint();
     graph.scheduleRepaint();
     timeLbl.scheduleRepaint();
 
-    secInterval = 10;
-    getTempTask();
+    secInterval = 164;
+    graph.setSecsBetweenPoints(secInterval);
+    getTemp();
+    graph.scheduleRepaint();
+    
+    
 }

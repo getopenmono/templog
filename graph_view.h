@@ -9,7 +9,11 @@ class GraphView : public mono::ui::View
 public:
 	GraphView (uint8_t y, uint8_t height);
 	void setNextPoint (float point);
+    void setSecsBetweenPoints(int secs);
+    bool secsDirty;
+    
 protected:
+    int secsBetweenSamples;
 	virtual void repaint ();
 private:
 	void updateMinMax (float point);

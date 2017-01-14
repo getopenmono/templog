@@ -1,5 +1,5 @@
 sim
-.DS_Strore
+.DS_Store
 build
 *.map
 *.elf

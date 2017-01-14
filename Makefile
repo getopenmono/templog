@@ -15,6 +15,7 @@ COMP_LIB=$(PSOC5_PATH)/lib/CyComponentLibrary.a
 INCLUDE_DIR=$(PSOC5_PATH)/psoc5
 CYPRESS_LIB=$(BUILD_DIR)/monoCyLib.a
 LINKER_SCRIPT=$(INCLUDE_DIR)/cm3gcc.ld
+COMPILE_TIMESTAMP=$(shell date +%Y-%m-%dT%H:%M:%S%z)
 
 OBJECTS =		$(patsubst %.c,%.o,$(wildcard *.c)) \
 				$(patsubst %.cpp,%.o,$(wildcard *.cpp))
@@ -86,7 +87,7 @@ MKDIR=mkdir
 MONOPROG=monomake monoprog
 ELFTOOL='C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\bin\cyelftool.exe'
 INCS = -I . $(addprefix -I, $(MONO_INCLUDES) $(MBED_INCLUDES) $(INCLUDE_DIR)) 
-CDEFS=
+CDEFS=-DMONO_COMPILE_TIMESTAMP="\"$(COMPILE_TIMESTAMP)\""
 ASDEFS=
 AS_FLAGS = -c -g -Wall -mcpu=cortex-m3 -mthumb -mthumb-interwork -march=armv7-m
 CC_FLAGS = -c -g -Wall -mcpu=cortex-m3 -mthumb $(OPTIMIZATION) -mthumb-interwork -fno-common -fmessage-length=0 -ffunction-sections -fdata-sections -march=armv7-m
@@ -213,7 +214,7 @@ includeFiles:
 headers:
 	@echo $(TARGET_HEADERS) $(MONO_HEADERS) $(MBED_HEADERS) $(PSOC_HEADERS)
 
-install: $(TARGET).elf
+install: resettime $(TARGET).elf
 	@echo "Programming app to device..."
 	$(MONOPROG) -p $(TARGET).elf --verbose=2
 
@@ -228,7 +229,10 @@ clean:
 
 summary: $(TARGET).elf
 	$(ELFTOOL) -S $(TARGET).elf
-	
+
+resettime:
+	@echo "Resetting time to $(COMPILE_TIMESTAMP)"
+	@rm 	$(BUILD_DIR)/app_controller.o
 
 ## $(LD) -Wl,--start-group $(LD_FLAGS) libs/CyCompLib.a $(LDSCRIPT) -o $@ $^ -Wl,--end-group $(LD_SYS_LIBS)
 ## $(ELFTOOL) -C $@ --flash_size $(FLASH_SIZE) --flash_row_size $(FLASH_ROW_SIZE)
