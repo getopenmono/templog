@@ -1,5 +1,6 @@
 
 #include "settings_scene.h"
+#include <Fonts/FreeSans9pt7b.h>
 
 SettingsScene::SettingsScene() :
     timeScaleLbl(Rect(10, 10, 156, 35), "Graph timescale:"),
@@ -10,6 +11,9 @@ SettingsScene::SettingsScene() :
     hrs48(Rect(40+50+5  , 5+75, 50, 35), "48hr"),
     connectBtn(mono::geo::Rect(20, 160, 176-40, 35), "Connect")
 {
+    timeScaleLbl.setFont(FreeSans9pt7b);
+    ssidLbl.setFont(FreeSans9pt7b);
+    
     hrs4.setClickCallback<SettingsScene>(this, &SettingsScene::hrs4Call);
     hrs8.setClickCallback<SettingsScene>(this, &SettingsScene::hrs8Call);
     hrs24.setClickCallback<SettingsScene>(this, &SettingsScene::hrs24Call);

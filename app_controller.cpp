@@ -1,21 +1,26 @@
 #include "app_controller.h"
-#include <ptmono30.h>
+#include <Fonts/FreeSans18pt7b.h>
+#include <Fonts/FreeSans9pt7b.h>
+
+const MonoFont *mono::ui::TextLabelView::StandardTextFont = 0;
+const GFXfont *mono::ui::TextLabelView::StandardGfxFont = &FreeSans9pt7b;
 
 AppController::AppController() :
     clkTimer(999),
-    tempLbl(mono::geo::Rect(0,40,176,110),""),
+    tempLbl(mono::geo::Rect(10,10,156,60),""),
     graph(109,109),
-    timeLbl(mono::geo::Rect(0,89,176,15), "time"),
+    timeLbl(mono::geo::Rect(0,65,176,25), ""),
     settingsBtn(mono::geo::Rect(150,5,176-151,30), "i")
 {
     secInterval = 164;
     
     tempLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
-    tempLbl.setFont(PT_Mono_30);
+    tempLbl.setFont(FreeSans18pt7b);
     tempLbl.setText(mono::display::CloudsColor);
     tempLbl.show();
     
     timeLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
+    timeLbl.setFont(FreeSans9pt7b);
     timeLbl.show();
     
     clkTimer.setCallback<AppController>(this, &AppController::updateClock);
@@ -23,6 +28,7 @@ AppController::AppController() :
 #ifdef MONO_COMPILE_TIMESTAMP
     DateTime::setSystemDateTime(DateTime::fromISO8601(MONO_COMPILE_TIMESTAMP));
 #endif
+    timeLbl.setText(mono::DateTime::now().toTimeString());
     
     float temp = getTemp(true);
     graph.setSecsBetweenPoints(secInterval);
