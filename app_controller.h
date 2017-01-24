@@ -4,6 +4,7 @@
 #include <mono.h>
 #include "graph_view.h"
 #include "settings_scene.h"
+#include "internet.h"
 
 //using namespace mono::ui;
 using namespace mono;
@@ -19,18 +20,24 @@ public:
     unsigned int filterPosition;
     PowerSaver pwrsave;
     int secInterval;
+    network::HttpPostClient client;
     
     mono::ui::TextLabelView timeLbl;
-    ScheduledTask tmpTask;
+    ScheduledTask tmpTask, uploadTask;
     
     mono::ui::ButtonView settingsBtn;
     
     SettingsScene settingScn;
+    Internet internet;
     
     AppController();
 
     float getTemp(bool firstRun = false);
     void getTempTask();
+    
+    void uploadTempAsync();
+    void uploadTemp();
+    void uploadTempReady();
     
     void showSettings();
     void showApp();
@@ -42,6 +49,10 @@ public:
     void monoWakeFromReset();
     void monoWillGotoSleep();
     void monoWakeFromSleep();
+
+    uint16_t postBodyLength();
+    void postBody(char *data);
+    void tempUploadCompletion(network::INetworkRequest::CompletionEvent *);
 
 };
 

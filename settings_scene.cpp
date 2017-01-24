@@ -19,6 +19,12 @@ SettingsScene::SettingsScene() :
     hrs24.setClickCallback<SettingsScene>(this, &SettingsScene::hrs24Call);
     hrs48.setClickCallback<SettingsScene>(this, &SettingsScene::hrs48Call);
     connectBtn.setClickCallback<SettingsScene>(this, &SettingsScene::cnctCall);
+
+#ifdef WLAN_SSID
+#ifdef WLAN_PASS
+    ssidLbl.setText("Wifi: " WLAN_SSID);
+#endif
+#endif
 }
 
 void SettingsScene::repaint()

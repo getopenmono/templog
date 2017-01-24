@@ -102,6 +102,38 @@ void AppController::fillTempFilter(int temp)
     filterPosition = 0;
 }
 
+void AppController::uploadTempAsync()
+{
+    IApplicationContext::Instance->PowerManager->__shouldWakeUp = true;
+    async<AppController>(this, &AppController::uploadTemp);
+    
+}
+void AppController::uploadTemp()
+{
+    printf("Will connect and upload temp...\r\n");
+    internet.setConnectCallback<AppController>(this, &AppController::uploadTempReady);
+#ifdef WLAN_SSID
+    if (!internet.isConnected())
+    {
+        internet.connect(WLAN_SSID, WLAN_PASS);
+        pwrsave.deactivate();
+    }
+    else
+        async<AppController>(this, &AppController::uploadTempReady);
+#endif
+}
+void AppController::uploadTempReady()
+{
+    printf("uploading temp...\r\n");
+      client = network::HttpPostClient("http://grapher.openmono.com/autostamp/stoffera/templog/8", "Content-Type: application/x-www-form-urlencoded\r\n");
+    //client = network::HttpPostClient("http://kong.ptype.dk/autostamp/stoffera/templog/2", "Content-Type: application/x-www-form-urlencoded\r\n");
+    client.setBodyLengthCallback<AppController>(this, &AppController::postBodyLength);
+    client.setBodyDataCallback<AppController>(this, &AppController::postBody);
+    client.setCompletionCallback<AppController>(this, &AppController::tempUploadCompletion);
+
+    client.post();
+}
+
 void AppController::showSettings()
 {
     tempLbl.hide();
@@ -129,6 +161,14 @@ void AppController::monoWakeFromReset()
     tmpTask = ScheduledTask(DateTime::now().addSeconds(secInterval));
     tmpTask.setRunInSleep(true);
     tmpTask.setTask<AppController>(this, &AppController::getTempTask);
+    
+#ifdef WLAN_SSID
+#ifdef WLAN_PASS
+    uploadTask = ScheduledTask(DateTime::now().addMinutes(5));
+    uploadTask.setRunInSleep(true);
+    uploadTask.setTask<AppController>(this, &AppController::uploadTempAsync);
+#endif
+#endif
 }
 
 void AppController::monoWillGotoSleep()
@@ -154,4 +194,45 @@ void AppController::monoWakeFromSleep()
     graph.scheduleRepaint();
     
     
+}
+
+uint16_t AppController::postBodyLength()
+{
+    int sum = 0;
+    for (int i=0; i<filterLength; i++) {
+        sum += tempFilter[i];
+    }
+
+    float tempC = (sum * 1.0) / (1000*filterLength);
+
+    int temp = (int) tempC;
+    uint16_t len = String::Format("%d.%d", temp, (int)((tempC-temp)*10) ).Length();
+    printf("POST content-length is: %d\r\n",len);
+
+    return len;
+}
+
+void AppController::postBody(char *data)
+{
+    int sum = 0;
+    for (int i=0; i<filterLength; i++) {
+        sum += tempFilter[i];
+    }
+
+    float tempC = (sum * 1.0) / (1000*filterLength);
+
+    int temp = (int) tempC;
+    String body = String::Format("%d.%d", temp, (int)((tempC-temp)*10) );
+    printf("upload temp value: %s\r\n", body());
+
+    memcpy(data, body.stringData, body.Length());
+}
+
+void AppController::tempUploadCompletion(network::INetworkRequest::CompletionEvent *)
+{
+    printf("Done! Reschedule upload temp...\r\n");
+    uploadTask.reschedule(DateTime::now().addMinutes(30));
+    //async(IApplicationContext::EnterSleepMode);
+    //pwrsave.startDimTimer();
+    pwrsave.dim();
 }
