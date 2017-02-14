@@ -16,6 +16,7 @@ protected:
     mbed::SPI rpSpi;
     mono::redpine::ModuleSPICommunication spiComm;
     mbed::FunctionPointer connectHandler;
+    mbed::FunctionPointer errorHandler;
     
 public:
     
@@ -29,6 +30,12 @@ public:
         connectHandler.attach<Class>(cnxt, method);
     }
     
+    template <typename Class>
+    void setErrorCallback(Class *cnxt, void(Class::*method)())
+    {
+        errorHandler.attach<Class>(cnxt, method);
+    }
+    
     bool isConnected() const;
     
     void onSystemPowerOnReset();
@@ -37,6 +44,7 @@ public:
     void OnSystemBatteryLow();
     
     void onNetworkReady();
+    void onNetworkError();
 };
 
 #endif /* internet_h */

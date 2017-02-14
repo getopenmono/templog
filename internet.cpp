@@ -17,6 +17,8 @@ void Internet::connect(String ssid, String pass)
         return;
 
     mono::redpine::Module::setNetworkReadyCallback<Internet>(this, &Internet::onNetworkReady);
+    mono::redpine::Module::setConnectFailedCallback<Internet>(this, &Internet::onNetworkError);
+    
     if (mono::redpine::Module::initialize(&spiComm))
         mono::redpine::Module::setupWifiOnly(ssid, pass);
     else
@@ -48,4 +50,10 @@ void Internet::onNetworkReady()
 {
     connected = true;
     connectHandler.call();
+}
+
+void Internet::onNetworkError()
+{
+    connected = false;
+    errorHandler.call();
 }
