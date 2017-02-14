@@ -6,6 +6,7 @@
 #include "settings_scene.h"
 #include "internet.h"
 #include "hysteresis_trigger.h"
+#include "url.h"
 
 //using namespace mono::ui;
 using namespace mono;

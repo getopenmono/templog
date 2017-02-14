@@ -327,19 +327,24 @@ void AppController::networkError()
 uint16_t AppController::noticeBodyLength()
 {
 
-    return snprintf(0, 0, "token=%s&user=%s&device=%s&title=%s&message=%s&url=&url_title=See+Graph",
-                    PushoverTokenId, PushoverUserId, PushoverUserId,
-                    levelNotice.Title(), levelNotice.Message()) +
-           snprintf(0, 0, "http://grapher.openmono.com/data/%s/%s/%s?title=Templog&timeformat=MM-DD HH:mm&yaxis=℃",
+    int bodyLen = snprintf(0, 0, "token=%s&user=%s&title=%s&message=%s&url=",
+                    PushoverTokenId, PushoverUserId,
+                    levelNotice.Title(), levelNotice.Message());
+
+    network::Url url = network::Url::Format("http://grapher.openmono.com/data/%s/%s/%s?title=Templog&timeformat=MM-DD HH:mm&yaxis=℃",
                     GrapherUserId, GrapherContainerId, GrapherSeriesId);
+
+    return bodyLen+url.Length();
 }
 
 void AppController::noticeBodyData(char *data)
 {
-    String url = String::Format("http://grapher.openmono.com/data/%s/%s/%s?title=Templog&timeformat=MM-DD HH:mm&yaxis=℃",
+    network::Url url = network::Url::Format("http://grapher.openmono.com/data/%s/%s/%s?title=Templog&timeformat=MM-DD HH:mm&yaxis=℃",
                                 GrapherUserId, GrapherContainerId, GrapherSeriesId);
-    snprintf(data, noticeBodyLength(), "token=%s&user=%s&device=%s&title=%s&message=%s&url=%s=&url_title=See+Graph",
-             PushoverTokenId, PushoverUserId, PushoverUserId,
+
+    // +1 because body length does not include NULL terminator
+    snprintf(data, noticeBodyLength()+1, "token=%s&user=%s&title=%s&message=%s&url=%s",
+             PushoverTokenId, PushoverUserId,
              levelNotice.Title(), levelNotice.Message(), url());
 }
 
