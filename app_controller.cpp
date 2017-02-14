@@ -5,7 +5,7 @@
 const MonoFont *mono::ui::TextLabelView::StandardTextFont = 0;
 const GFXfont *mono::ui::TextLabelView::StandardGfxFont = &FreeSans9pt7b;
 
-const char* PushoverUrl = "https://api.pushover.net/1/messages.json";
+const char* PushoverUrl = "http://api.pushover.net/1/messages.json";
 const char* PushoverUserId = "";
 const char* PushoverTokenId = "";
 const char* PushoverDeviceId = "";
@@ -21,14 +21,14 @@ AppController::AppController() :
     timeLbl(mono::geo::Rect(0,65,176,25), ""),
     dataLabel(mono::geo::Rect(5,5,20,20), "d"),
     settingsBtn(mono::geo::Rect(150,5,176-151,30), "i"),
-    levelTrigger(20,10)
+    levelTrigger(15,10)
 {
     secInterval = 164;
-    uploadTempIntervalSecs = 10;
+    uploadTempIntervalSecs = 20;
 
     shouldSendNotification = false;
-    enableLevelNotifications = true;
-    enableTempUploads = true;
+    enableLevelNotifications = false;
+    enableTempUploads = false;
     
     tempLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
     tempLbl.setFont(FreeSans18pt7b);
@@ -199,6 +199,7 @@ void AppController::_sendNotification()
     client = network::HttpPostClient(PushoverUrl, "Content-Type: application/x-www-form-urlencoded\r\n");
     client.setBodyLengthCallback<AppController>(this, &AppController::noticeBodyLength);
     client.setBodyDataCallback<AppController>(this, &AppController::noticeBodyData);
+    client.setDataReadyCallback<AppController>(this, &AppController::noticeResponse);
     client.setCompletionCallback<AppController>(this, &AppController::noticeCompletion);
     client.post();
 }
@@ -346,6 +347,11 @@ void AppController::noticeBodyData(char *data)
     snprintf(data, noticeBodyLength()+1, "token=%s&user=%s&title=%s&message=%s&url=%s",
              PushoverTokenId, PushoverUserId,
              levelNotice.Title(), levelNotice.Message(), url());
+}
+
+void AppController::noticeResponse(const network::HttpClient::HttpResponseData &resp)
+{
+    printf("%s\r\n", resp.bodyChunk());
 }
 
 void AppController::noticeCompletion(network::INetworkRequest::CompletionEvent *)

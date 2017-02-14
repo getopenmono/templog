@@ -5,8 +5,8 @@
 #include "graph_view.h"
 #include "settings_scene.h"
 #include "internet.h"
-#include "hysteresis_trigger.h"
-#include "url.h"
+#include <io/hysteresis_trigger.h>
+#include <url.h>
 
 //using namespace mono::ui;
 using namespace mono;
@@ -35,7 +35,7 @@ public:
     mono::ui::TextLabelView tempLbl;
     GraphView graph;
     static const int filterLength = 3;
-    static const int uploadIntervalMins = 1;
+    static const int uploadIntervalMins = 2;
     int tempFilter[filterLength];
     unsigned int filterPosition;
     PowerSaver pwrsave;
@@ -90,6 +90,7 @@ public:
     uint16_t noticeBodyLength();
     void noticeBodyData(char *data);
     void noticeCompletion(network::INetworkRequest::CompletionEvent *);
+    void noticeResponse(const network::HttpClient::HttpResponseData &);
 
 };
 
