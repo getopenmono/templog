@@ -1,6 +1,9 @@
 #include "app_controller.h"
 #include <Fonts/FreeSans18pt7b.h>
 #include <Fonts/FreeSans9pt7b.h>
+#include <icons/upload-16.h>
+#include <icons/settings-16.h>
+#include <icons/thermometer-24.h>
 
 const MonoFont *mono::ui::TextLabelView::StandardTextFont = 0;
 const GFXfont *mono::ui::TextLabelView::StandardGfxFont = &FreeSans9pt7b;
@@ -19,9 +22,11 @@ AppController::AppController() :
     tempLbl(mono::geo::Rect(10,10,156,60),""),
     graph(109,109),
     timeLbl(mono::geo::Rect(0,65,176,25), ""),
-    dataLabel(mono::geo::Rect(5,5,20,20), "d"),
-    settingsBtn(mono::geo::Rect(150,5,176-151,30), "i"),
-    levelTrigger(15,10)
+    settingsBtn(mono::geo::Rect(150,5,176-151,30), " "),
+    dataIcon(mono::geo::Point(5,13), upload16),
+    settingsIcon(mono::geo::Point(155, 12), settings16),
+    tempIcon(mono::geo::Point(10, 29), thermometer24),
+    levelTrigger(15,5)
 {
     secInterval = 164;
     uploadTempIntervalSecs = 20;
@@ -33,20 +38,16 @@ AppController::AppController() :
     tempLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
     tempLbl.setFont(FreeSans18pt7b);
     tempLbl.setText(mono::display::CloudsColor);
-    tempLbl.show();
     
     timeLbl.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
     timeLbl.setFont(FreeSans9pt7b);
-    timeLbl.show();
-    
-    dataLabel.setAlignment(mono::ui::TextLabelView::ALIGN_CENTER);
-    dataLabel.setFont(FreeSans9pt7b);
-    dataLabel.setText(display::AlizarinColor);
     
     clkTimer.setCallback<AppController>(this, &AppController::updateClock);
     
     levelTrigger.setLowerTriggerCallback<AppController>(this, &AppController::setLowTempState);
     levelTrigger.setUpperTriggerCallback<AppController>(this, &AppController::setHighTempState);
+    
+    settingScn.setDimissCallback(this, &AppController::showApp);
     
 #ifdef MONO_COMPILE_TIMESTAMP
     DateTime::setSystemDateTime(DateTime::fromISO8601(MONO_COMPILE_TIMESTAMP));
@@ -56,10 +57,20 @@ AppController::AppController() :
     float temp = getTemp(true);
     graph.setSecsBetweenPoints(secInterval);
     graph.setNextPoint(temp);
-    graph.show();
+    
+    dataIcon.setForeground(mono::ui::View::StandardBackgroundColor);
     
     settingsBtn.setClickCallback<AppController>(this, &AppController::showSettings);
-    settingsBtn.show();
+    settingsBtn.setBorder(mono::ui::View::StandardBackgroundColor);
+    
+    mainScene.addView(tempLbl);
+    mainScene.addView(tempIcon);
+    mainScene.addView(timeLbl);
+    mainScene.addView(dataIcon);
+    mainScene.addView(graph);
+    mainScene.addView(settingsBtn);
+    mainScene.addView(settingsIcon);
+    mainScene.show();
 }
 
 float AppController::getTemp(bool firstRun)
@@ -206,27 +217,19 @@ void AppController::_sendNotification()
 
 void AppController::showSettings()
 {
-    tempLbl.hide();
-    timeLbl.hide();
-    graph.hide();
-    settingsBtn.hide();
-    
+    mainScene.hide();
     settingScn.show();
 }
 
 void AppController::showApp()
 {
     settingScn.hide();
-    
-    tempLbl.show();
-    timeLbl.show();
-    graph.show();
-    settingsBtn.show();
+    mainScene.show();
 }
 
 void AppController::monoWakeFromReset()
 {
-    clkTimer.Start();
+    clkTimer.start();
     
     tmpTask = ScheduledTask(DateTime::now().addSeconds(secInterval));
     tmpTask.setRunInSleep(true);
@@ -248,10 +251,7 @@ void AppController::monoWillGotoSleep()
 {
     pwrsave.deactivate();
     IApplicationContext::Instance->DisplayController->setBrightness(0);
-    dataLabel.setText(mono::ui::View::StandardBackgroundColor);
-    dataLabel.scheduleRepaint();
     
-    //secInterval = 10;
 }
 
 void AppController::monoWakeFromSleep()
@@ -260,16 +260,11 @@ void AppController::monoWakeFromSleep()
     pwrsave.undim();
     
     showApp();
-    tempLbl.scheduleRepaint();
-    graph.scheduleRepaint();
-    timeLbl.scheduleRepaint();
-
+    
     secInterval = 164;
     graph.setSecsBetweenPoints(secInterval);
     getTemp();
     graph.scheduleRepaint();
-    
-    
 }
 
 uint16_t AppController::postBodyLength()
@@ -307,8 +302,8 @@ void AppController::postBody(char *data)
 void AppController::tempUploadCompletion(network::INetworkRequest::CompletionEvent *)
 {
     printf("Done! Reschedule upload temp...\r\n");
-    dataLabel.setText(mono::ui::View::StandardBackgroundColor);
-    dataLabel.scheduleRepaint();
+    dataIcon.setForeground(mono::ui::View::StandardBackgroundColor);
+    dataIcon.scheduleRepaint();
     
     uploadTask.reschedule(DateTime::now().addMinutes(uploadIntervalMins));
     //async(IApplicationContext::EnterSleepMode);
@@ -318,8 +313,9 @@ void AppController::tempUploadCompletion(network::INetworkRequest::CompletionEve
 
 void AppController::networkError()
 {
-    dataLabel.setText(mono::ui::View::StandardBackgroundColor);
-    dataLabel.scheduleRepaint();
+    dataIcon.setForeground(mono::ui::View::StandardBackgroundColor);
+    dataIcon.scheduleRepaint();
+    
     pwrsave.dim();
     printf("Network error!\r\n");
     uploadTask.reschedule(DateTime::now().addMinutes(uploadIntervalMins));
@@ -357,8 +353,8 @@ void AppController::noticeResponse(const network::HttpClient::HttpResponseData &
 void AppController::noticeCompletion(network::INetworkRequest::CompletionEvent *)
 {
     printf("Done sending notification!\r\n");
-    dataLabel.setText(mono::ui::View::StandardBackgroundColor);
-    dataLabel.scheduleRepaint();
+    dataIcon.setForeground(mono::ui::View::StandardBackgroundColor);
+    dataIcon.scheduleRepaint();
     
     pwrsave.dim();
 }
